@@ -39,6 +39,11 @@ namespace Moba.Units
             if (visual != null) visual.SetActive(false);
         }
 
+        /// <summary>Строение — одноразовая цель: возрождение запрещено.</summary>
+        public override void Revive()
+        {
+        }
+
         private bool IsObjectiveUnlocked()
         {
             if (IsNexus) return HasDestroyedInnerTower(Team);

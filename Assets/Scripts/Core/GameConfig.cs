@@ -27,6 +27,24 @@ namespace Moba.Core
         public const float HeroAttackDamage = 60f;
         public const float HeroAttackInterval = 0.8f;
         public const float HeroProjectileSpeed = 28f;
+        public const float HeroManaRegenPerSecond = 8f;
+
+        /// <summary>Множитель урона только для героя игрока.</summary>
+        public const float PlayerDamageMultiplier = 10f;
+
+        // Способности
+        public const float SkillshotDamage = 130f;
+        public const float SkillshotSpeed = 26f;
+        public const float SkillshotRange = 14f;
+        public const float SkillshotRadius = 0.8f;
+        public const float DashDistance = 6f;
+        public const float HealAbilityPercent = 0.25f;
+
+        // ИИ героев
+        public const float BotAggroRange = 12f;
+        public const float BotRetreatHealthRatio = 0.3f;
+        public const float BotRecoverHealthRatio = 0.7f;
+        public const float BotRepathInterval = 0.3f;
 
         public const float HeroRespawnSeconds = 8f;
 

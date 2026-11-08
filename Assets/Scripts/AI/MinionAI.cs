@@ -1,8 +1,8 @@
 using UnityEngine;
 using Moba.Combat;
 using Moba.Core;
+using Moba.Map;
 using Moba.Navigation;
-using Moba.Utils;
 
 namespace Moba.AI
 {
@@ -20,19 +20,17 @@ namespace Moba.AI
         private Unit self;
         private NavMover mover;
         private Attacker attacker;
-        private Vector3[] path;
-        private int waypointIndex;
+        private LaneRoute laneRoute;
         private Unit target;
         private float nextScanTime;
         private float nextRepathTime;
 
-        public void Initialize(Unit owner, NavMover navMover, Attacker unitAttacker, Vector3[] route)
+        public void Initialize(Unit owner, NavMover navMover, Attacker unitAttacker, Vector3[] routePath)
         {
             self = owner;
             mover = navMover;
             attacker = unitAttacker;
-            path = route;
-            waypointIndex = path != null && path.Length > 1 ? 1 : 0;
+            laneRoute = new LaneRoute(routePath);
         }
 
         private void Update()
@@ -46,7 +44,7 @@ namespace Moba.AI
                     self.Team, transform.position, GameConfig.MinionAggroRange);
             }
 
-            if (target != null && target.IsAlive)
+            if (target != null && target.CanBeDamaged)
             {
                 if (attacker.CanReach(target))
                 {
@@ -69,20 +67,14 @@ namespace Moba.AI
 
         private void AdvanceRoute()
         {
-            if (path == null || path.Length == 0) return;
+            if (laneRoute == null) return;
 
-            int last = path.Length - 1;
-            if (waypointIndex > last) waypointIndex = last;
-
-            if (MathUtil.FlatDistance(transform.position, path[waypointIndex]) <= WaypointReached)
-            {
-                waypointIndex = Mathf.Min(waypointIndex + 1, last);
-            }
+            Vector3 destination = laneRoute.Next(transform.position, WaypointReached);
 
             if (Time.time >= nextRepathTime)
             {
                 nextRepathTime = Time.time + RepathInterval;
-                mover.MoveTo(path[waypointIndex]);
+                mover.MoveTo(destination);
             }
         }
     }

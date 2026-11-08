@@ -18,6 +18,7 @@ namespace Moba.Units
         public float RespawnEndTime { get; private set; }
         public UnitKind LastKillerKind { get; private set; } = UnitKind.None;
         public bool LastKillerWasNexus { get; private set; }
+        public float DamageMultiplier { get; private set; } = 1f;
 
         public event Action<Hero> ManaChanged;
 
@@ -35,6 +36,12 @@ namespace Moba.Units
             mover = GetComponent<NavMover>();
         }
 
+        private void Update()
+        {
+            if (!IsAlive || Mana >= MaxMana) return;
+            Mana = Mathf.Min(MaxMana, Mana + GameConfig.HeroManaRegenPerSecond * Time.deltaTime);
+        }
+
         public void Initialize(Team team, float maxHealth, float maxMana)
         {
             base.Initialize(team, maxHealth, UnitKind.Hero);
@@ -46,6 +53,11 @@ namespace Moba.Units
         public void SetSpawnPoint(Vector3 point)
         {
             SpawnPoint = point;
+        }
+
+        public void SetDamageMultiplier(float value)
+        {
+            DamageMultiplier = Mathf.Max(0.01f, value);
         }
 
         public bool TrySpendMana(float amount)

@@ -1,20 +1,16 @@
 using UnityEngine;
-using UnityEngine.AI;
 using Moba.CameraControl;
-using Moba.Combat;
-using Moba.Control;
 using Moba.Map;
 using Moba.Navigation;
 using Moba.Spawn;
 using Moba.UI;
 using Moba.Units;
-using Moba.Utils;
 
 namespace Moba.Core
 {
     /// <summary>
     /// Точка входа матча: собирает карту, печёт NavMesh, создаёт камеру,
-    /// героя игрока, манекены и HUD. Сцена содержит только этот объект.
+    /// шесть героев (игрок + 5 ботов), волны миньонов и HUD.
     /// </summary>
     public class GameBootstrap : MonoBehaviour
     {
@@ -28,15 +24,23 @@ namespace Moba.Core
             NavMeshRuntimeBaker.Bake(layout.Root);
 
             RTSCamera cameraRig = RTSCamera.Create();
-            Hero hero = SpawnHero(layout, cameraRig);
-            cameraRig.Follow(hero.transform);
+
+            // Индексы линий: 0 — mid, 1 — top, 2 — bottom.
+            Hero player = HeroSpawner.Spawn(layout, Team.Blue, 1, 1, true, cameraRig);
+            HeroSpawner.Spawn(layout, Team.Blue, 1, 0, false, cameraRig);
+            HeroSpawner.Spawn(layout, Team.Blue, 2, 2, false, cameraRig);
+            HeroSpawner.Spawn(layout, Team.Red, 0, 0, false, cameraRig);
+            HeroSpawner.Spawn(layout, Team.Red, 1, 1, false, cameraRig);
+            HeroSpawner.Spawn(layout, Team.Red, 2, 2, false, cameraRig);
+
+            cameraRig.Follow(player.transform);
 
             var wavesGo = new GameObject("Waves");
             wavesGo.transform.SetParent(transform, false);
             var waves = wavesGo.AddComponent<WaveManager>();
             waves.Initialize(layout);
 
-            Hud.Create(hero);
+            Hud.Create(player);
         }
 
         private static void EnsureLighting()
@@ -54,40 +58,5 @@ namespace Moba.Core
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.35f, 0.38f, 0.45f);
         }
-
-        private static Hero SpawnHero(MapLayout layout, RTSCamera cameraRig)
-        {
-            var go = new GameObject("PlayerHero");
-            go.transform.position = layout.HeroSpawn(Team.Blue);
-
-            SceneFactory.Primitive(
-                PrimitiveType.Capsule, "Visual", go.transform,
-                new Vector3(0f, 1f, 0f), Vector3.one, TeamColors.Player);
-
-            go.AddComponent<NavMeshAgent>();
-            var mover = go.AddComponent<NavMover>();
-            mover.Configure(GameConfig.HeroMoveSpeed);
-
-            var hero = go.AddComponent<Hero>();
-            hero.Initialize(Team.Blue, GameConfig.HeroMaxHealth, GameConfig.HeroMaxMana);
-            hero.SetSpawnPoint(layout.HeroSpawn(Team.Blue));
-
-            var attacker = go.AddComponent<Attacker>();
-            attacker.Initialize(
-                hero,
-                GameConfig.HeroAttackRange,
-                GameConfig.HeroAttackDamage,
-                GameConfig.HeroAttackInterval,
-                GameConfig.HeroProjectileSpeed);
-
-            var controller = go.AddComponent<PlayerController>();
-            controller.Setup(hero, mover, attacker, cameraRig);
-
-            WorldHealthBar.Attach(hero, TeamColors.Blue);
-            mover.SnapToNavMesh();
-
-            return hero;
-        }
-
     }
 }

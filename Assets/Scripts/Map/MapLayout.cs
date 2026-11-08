@@ -41,10 +41,14 @@ namespace Moba.Map
             return MapPath.PointAt(LaneFor(laneIndex, team), 8f);
         }
 
-        public Vector3 HeroSpawn(Team team)
+        public Vector3 HeroSpawn(Team team, int index = 0)
         {
-            float sign = team == Team.Red ? -4f : 4f;
-            return BaseFor(team) + new Vector3(sign, 0f, sign);
+            float sign = team == Team.Red ? -1f : 1f;
+            Vector3 offset = new Vector3(
+                4f + index * 1.8f,
+                0f,
+                4f - index * 1.8f) * sign;
+            return BaseFor(team) + offset;
         }
 
         public Vector3 TowerPosition(int laneIndex, Team team, int tier)

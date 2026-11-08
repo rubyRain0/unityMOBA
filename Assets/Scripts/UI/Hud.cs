@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Moba.Abilities;
 using Moba.Core;
 using Moba.Units;
 
@@ -20,6 +21,9 @@ namespace Moba.UI
         private GameObject deathPanel;
         private Text deathKillerText;
         private Text deathTimerText;
+        private AbilitySystem abilitySystem;
+        private Image[] abilityImages;
+        private Text[] abilityCooldownTexts;
 
         public static Hud Create(Hero hero)
         {
@@ -48,13 +52,16 @@ namespace Moba.UI
 
             RectTransform panel = CreatePanel(
                 transform, "StatusPanel",
-                new Vector2(0f, 0f), new Vector2(440f, 138f), new Vector2(24f, 24f),
+                new Vector2(0.5f, 0f), new Vector2(440f, 138f), new Vector2(0f, 110f),
                 new Color(0.04f, 0.05f, 0.07f, 0.85f));
 
             hpFill = CreateBar(panel, "HP", new Vector2(16f, -16f), new Vector2(408f, 32f), new Color(0.8f, 0.18f, 0.18f), out hpText);
             manaFill = CreateBar(panel, "Mana", new Vector2(16f, -56f), new Vector2(408f, 24f), new Color(0.2f, 0.45f, 1f), out manaText);
 
-            Text hint = CreateText(transform, "Hint", "ПКМ — движение / атака      Колесо мыши — зум", 20, TextAnchor.UpperLeft);
+            Text hint = CreateText(
+                transform, "Hint",
+                "ПКМ — движение / атака      Q/W/E — способности      Колесо мыши — зум",
+                20, TextAnchor.UpperLeft);
             RectTransform hintRect = hint.rectTransform;
             hintRect.SetParent(transform, false);
             hintRect.anchorMin = new Vector2(0f, 1f);
@@ -63,7 +70,9 @@ namespace Moba.UI
             hintRect.anchoredPosition = new Vector2(24f, -24f);
             hintRect.sizeDelta = new Vector2(900f, 40f);
 
+            abilitySystem = hero != null ? hero.GetComponent<AbilitySystem>() : null;
             BuildDeathPanel();
+            BuildAbilityBar();
             UpdateBars();
         }
 
@@ -71,6 +80,7 @@ namespace Moba.UI
         {
             UpdateBars();
             UpdateDeathPanel();
+            UpdateAbilityBar();
         }
 
         private void BuildDeathPanel()
@@ -133,6 +143,64 @@ namespace Moba.UI
                 UnitKind.Hero => "Убийца: герой противника",
                 _ => "Причина смерти неизвестна"
             };
+        }
+
+        private void BuildAbilityBar()
+        {
+            if (abilitySystem == null) return;
+
+            abilityImages = new Image[3];
+            abilityCooldownTexts = new Text[3];
+
+            for (int i = 0; i < 3; i++)
+            {
+                Ability ability = abilitySystem.GetAbility(i);
+                if (ability == null) continue;
+
+                RectTransform box = CreatePanel(
+                    transform, "Ability_" + ability.Key,
+                    new Vector2(0.5f, 0f), new Vector2(72f, 72f), new Vector2((i - 1) * 84f, 24f),
+                    new Color(ability.Color.r, ability.Color.g, ability.Color.b, 0.85f));
+
+                abilityImages[i] = box.GetComponent<Image>();
+
+                Text keyText = CreateText(box, "Key", ability.Key.ToString(), 28, TextAnchor.MiddleCenter);
+                RectTransform keyRect = keyText.rectTransform;
+                keyRect.anchorMin = Vector2.zero;
+                keyRect.anchorMax = Vector2.one;
+                keyRect.offsetMin = Vector2.zero;
+                keyRect.offsetMax = Vector2.zero;
+
+                Text cooldownText = CreateText(box, "CD", string.Empty, 18, TextAnchor.LowerCenter);
+                RectTransform cooldownRect = cooldownText.rectTransform;
+                cooldownRect.anchorMin = new Vector2(0f, 0f);
+                cooldownRect.anchorMax = new Vector2(1f, 0f);
+                cooldownRect.pivot = new Vector2(0.5f, 0f);
+                cooldownRect.anchoredPosition = new Vector2(0f, 4f);
+                cooldownRect.sizeDelta = new Vector2(0f, 20f);
+                abilityCooldownTexts[i] = cooldownText;
+            }
+        }
+
+        private void UpdateAbilityBar()
+        {
+            if (abilitySystem == null || abilityImages == null) return;
+
+            for (int i = 0; i < abilityImages.Length; i++)
+            {
+                if (abilityImages[i] == null) continue;
+
+                Ability ability = abilitySystem.GetAbility(i);
+                float cooldown = abilitySystem.GetCooldown(i);
+                bool onCooldown = cooldown > 0.05f;
+
+                abilityCooldownTexts[i].text = onCooldown ? cooldown.ToString("0.0") : string.Empty;
+
+                Color color = ability.Color;
+                abilityImages[i].color = new Color(
+                    color.r, color.g, color.b,
+                    onCooldown ? 0.25f : 0.85f);
+            }
         }
 
         private void UpdateBars()

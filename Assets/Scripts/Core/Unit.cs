@@ -69,7 +69,7 @@ namespace Moba.Core
             HealthChanged?.Invoke(this);
         }
 
-        public void Revive()
+        public virtual void Revive()
         {
             Health = MaxHealth;
             HealthChanged?.Invoke(this);

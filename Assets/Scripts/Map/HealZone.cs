@@ -35,6 +35,7 @@ namespace Moba.Map
             foreach (Unit unit in UnitRegistry.All)
             {
                 if (unit == null || !unit.IsAlive || unit.Team != team) continue;
+                if (unit.Kind == UnitKind.Structure) continue;
                 if (MathUtil.FlatDistance(unit.transform.position, transform.position) > radius) continue;
 
                 unit.Heal(amount);

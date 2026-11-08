@@ -96,9 +96,24 @@ namespace Moba.Map
                 {
                     BuildLaneSegment(map, lane[i - 1], lane[i]);
                 }
+
+                // Квадраты на поворотах: закрывают вырезы на стыках полос под 90°.
+                for (int i = 1; i < lane.Length - 1; i++)
+                {
+                    BuildLaneCorner(map, lane[i]);
+                }
             }
 
             return lanes;
+        }
+
+        private static void BuildLaneCorner(Transform map, Vector3 point)
+        {
+            SceneFactory.Primitive(
+                PrimitiveType.Cube, "LaneCorner", map,
+                new Vector3(point.x, 0.0225f, point.z),
+                new Vector3(5f, 0.045f, 5f),
+                LaneColor, keepCollider: false);
         }
 
         private static void BuildLaneSegment(Transform map, Vector3 a, Vector3 b)
