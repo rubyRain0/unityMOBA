@@ -5,6 +5,7 @@ using Moba.Combat;
 using Moba.Control;
 using Moba.Map;
 using Moba.Navigation;
+using Moba.Spawn;
 using Moba.UI;
 using Moba.Units;
 using Moba.Utils;
@@ -17,21 +18,23 @@ namespace Moba.Core
     /// </summary>
     public class GameBootstrap : MonoBehaviour
     {
-        [SerializeField] private bool spawnTrainingDummies = true;
-
         private void Start()
         {
             UnitRegistry.Clear();
             EnsureLighting();
 
             MapLayout layout = MapBuilder.Build(transform);
+            StructureSpawner.SpawnAll(layout, layout.Root.transform);
             NavMeshRuntimeBaker.Bake(layout.Root);
 
             RTSCamera cameraRig = RTSCamera.Create();
             Hero hero = SpawnHero(layout, cameraRig);
             cameraRig.Follow(hero.transform);
 
-            if (spawnTrainingDummies) SpawnTrainingDummies(layout);
+            var wavesGo = new GameObject("Waves");
+            wavesGo.transform.SetParent(transform, false);
+            var waves = wavesGo.AddComponent<WaveManager>();
+            waves.Initialize(layout);
 
             Hud.Create(hero);
         }
@@ -67,6 +70,7 @@ namespace Moba.Core
 
             var hero = go.AddComponent<Hero>();
             hero.Initialize(Team.Blue, GameConfig.HeroMaxHealth, GameConfig.HeroMaxMana);
+            hero.SetSpawnPoint(layout.HeroSpawn(Team.Blue));
 
             var attacker = go.AddComponent<Attacker>();
             attacker.Initialize(
@@ -85,29 +89,5 @@ namespace Moba.Core
             return hero;
         }
 
-        private static void SpawnTrainingDummies(MapLayout layout)
-        {
-            Vector3[] offsets =
-            {
-                new(14f, 0f, 4f),
-                new(18f, 0f, 9f),
-                new(9f, 0f, 12f)
-            };
-
-            foreach (Vector3 offset in offsets)
-            {
-                var go = new GameObject("TrainingDummy");
-                go.transform.position = layout.BlueBase + offset;
-
-                SceneFactory.Primitive(
-                    PrimitiveType.Capsule, "Visual", go.transform,
-                    new Vector3(0f, 1f, 0f), Vector3.one, TeamColors.Red);
-
-                var dummy = go.AddComponent<TrainingDummy>();
-                dummy.Initialize(Team.Red, GameConfig.DummyMaxHealth);
-
-                WorldHealthBar.Attach(dummy, TeamColors.Red);
-            }
-        }
     }
 }

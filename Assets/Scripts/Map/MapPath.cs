@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Moba.Map
@@ -81,6 +82,35 @@ namespace Moba.Map
                 reversed[i] = path[path.Length - 1 - i];
             }
             return reversed;
+        }
+
+        /// <summary>
+        /// Отрезает начало линии до указанной дистанции: первая точка —
+        /// позиция спавна, дальше идут только точки впереди.
+        /// </summary>
+        public static Vector3[] Trim(Vector3[] path, float distance)
+        {
+            var result = new List<Vector3> { PointAt(path, distance) };
+            float remaining = Mathf.Max(0f, distance);
+
+            for (int i = 1; i < path.Length; i++)
+            {
+                float segment = Vector3.Distance(path[i - 1], path[i]);
+                if (segment <= 0.0001f) continue;
+
+                if (remaining < segment)
+                {
+                    for (int j = i; j < path.Length; j++)
+                    {
+                        result.Add(path[j]);
+                    }
+                    break;
+                }
+
+                remaining -= segment;
+            }
+
+            return result.ToArray();
         }
     }
 }

@@ -34,7 +34,12 @@ namespace Moba.Control
 
         private void Update()
         {
-            if (hero == null || !hero.IsAlive) return;
+            if (hero == null) return;
+            if (!hero.IsAlive)
+            {
+                target = null;
+                return;
+            }
 
             if (Input.GetMouseButtonDown(1)) IssueCommand();
             UpdateCombat();
@@ -54,7 +59,7 @@ namespace Moba.Control
 
         private void UpdateCombat()
         {
-            if (target == null || !target.IsAlive)
+            if (target == null || !target.CanBeDamaged)
             {
                 target = null;
                 return;

@@ -28,9 +28,34 @@ namespace Moba.Core
         public const float HeroAttackInterval = 0.8f;
         public const float HeroProjectileSpeed = 28f;
 
-        // Манекены для проверки боя
-        public const float DummyMaxHealth = 300f;
-        public const float DummyRespawnSeconds = 3f;
+        public const float HeroRespawnSeconds = 8f;
+
+        // Миньоны и волны
+        public const float MinionMaxHealth = 150f;
+        public const float MinionMoveSpeed = 4.5f;
+        public const float MinionAttackRange = 4.5f;
+        public const float MinionAttackDamage = 16f;
+        public const float MinionAttackInterval = 0.9f;
+        public const float MinionProjectileSpeed = 22f;
+        public const float MinionAggroRange = 9f;
+        public const int MinionsPerWave = 3;
+        public const float WaveInterval = 22f;
+        public const float FirstWaveDelay = 3f;
+        public const float MinionSpawnDistance = 8f;
+        public const float MinionSpawnSpacing = 1.8f;
+
+        // Башни и нексус
+        public const float TowerMaxHealth = 1500f;
+        public const float TowerAttackRange = 9f;
+        public const float TowerAttackDamage = 40f;
+        public const float TowerAttackInterval = 1.2f;
+        public const float TowerProjectileSpeed = 25f;
+        public const float TowerHeight = 5f;
+        public const float NexusMaxHealth = 3200f;
+        public const float NexusAttackRange = 8f;
+        public const float NexusAttackDamage = 30f;
+        public const float NexusAttackInterval = 1.5f;
+        public const float NexusProjectileSpeed = 25f;
 
         // Камера
         public const float CameraHeight = 20f;

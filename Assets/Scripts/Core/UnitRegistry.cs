@@ -29,15 +29,35 @@ namespace Moba.Core
             if (unit != null) Units.Remove(unit);
         }
 
-        public static Unit FindNearestEnemy(Team team, Vector3 position, float range, bool aliveOnly = true)
+        /// <summary>
+        /// Ближайший враг в радиусе. Если задан preferredKind, сначала ищем
+        /// юнита этого типа (башни бьют миньонов первыми), потом любого.
+        /// </summary>
+        public static Unit FindNearestEnemy(
+            Team team,
+            Vector3 position,
+            float range,
+            UnitKind? preferredKind = null)
+        {
+            if (preferredKind.HasValue)
+            {
+                Unit preferred = FindNearest(team, position, range, preferredKind.Value);
+                if (preferred != null) return preferred;
+            }
+
+            return FindNearest(team, position, range, null);
+        }
+
+        private static Unit FindNearest(Team team, Vector3 position, float range, UnitKind? kind)
         {
             Unit best = null;
             float bestSqr = range * range;
 
             foreach (Unit unit in Units)
             {
-                if (unit == null || (aliveOnly && !unit.IsAlive)) continue;
+                if (unit == null || !unit.CanBeDamaged) continue;
                 if (unit.Team == Team.None || unit.Team == team) continue;
+                if (kind.HasValue && unit.Kind != kind.Value) continue;
 
                 float sqr = MathUtil.FlatSqrDistance(position, unit.transform.position);
                 if (sqr >= bestSqr) continue;

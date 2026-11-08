@@ -85,7 +85,7 @@ namespace Moba.CameraControl
             if (!Physics.Raycast(ray, out RaycastHit hit, 500f)) return false;
 
             Unit candidate = hit.collider.GetComponentInParent<Unit>();
-            if (candidate == null || !candidate.IsAlive) return false;
+            if (candidate == null || !candidate.CanBeDamaged) return false;
             if (candidate.Team == myTeam || candidate.Team == Team.None) return false;
 
             unit = candidate;

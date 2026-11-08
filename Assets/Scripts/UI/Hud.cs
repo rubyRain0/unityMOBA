@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Moba.Core;
 using Moba.Units;
 
 namespace Moba.UI
@@ -16,6 +17,9 @@ namespace Moba.UI
         private RectTransform manaFill;
         private Text hpText;
         private Text manaText;
+        private GameObject deathPanel;
+        private Text deathKillerText;
+        private Text deathTimerText;
 
         public static Hud Create(Hero hero)
         {
@@ -59,12 +63,76 @@ namespace Moba.UI
             hintRect.anchoredPosition = new Vector2(24f, -24f);
             hintRect.sizeDelta = new Vector2(900f, 40f);
 
+            BuildDeathPanel();
             UpdateBars();
         }
 
         private void Update()
         {
             UpdateBars();
+            UpdateDeathPanel();
+        }
+
+        private void BuildDeathPanel()
+        {
+            RectTransform panel = CreatePanel(
+                transform, "DeathPanel",
+                new Vector2(0.5f, 0.5f), new Vector2(620f, 176f), Vector2.zero,
+                new Color(0.08f, 0.02f, 0.02f, 0.88f));
+            deathPanel = panel.gameObject;
+
+            Text title = CreateText(panel, "Title", "Вы погибли", 38, TextAnchor.MiddleCenter);
+            RectTransform titleRect = title.rectTransform;
+            titleRect.anchorMin = new Vector2(0f, 1f);
+            titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.anchoredPosition = new Vector2(0f, -18f);
+            titleRect.sizeDelta = new Vector2(0f, 46f);
+            title.fontStyle = FontStyle.Bold;
+            title.color = new Color(1f, 0.45f, 0.4f);
+
+            deathKillerText = CreateText(panel, "Killer", string.Empty, 22, TextAnchor.MiddleCenter);
+            RectTransform killerRect = deathKillerText.rectTransform;
+            killerRect.anchorMin = new Vector2(0f, 1f);
+            killerRect.anchorMax = new Vector2(1f, 1f);
+            killerRect.pivot = new Vector2(0.5f, 1f);
+            killerRect.anchoredPosition = new Vector2(0f, -70f);
+            killerRect.sizeDelta = new Vector2(0f, 30f);
+
+            deathTimerText = CreateText(panel, "Timer", string.Empty, 26, TextAnchor.MiddleCenter);
+            RectTransform timerRect = deathTimerText.rectTransform;
+            timerRect.anchorMin = new Vector2(0f, 0f);
+            timerRect.anchorMax = new Vector2(1f, 0f);
+            timerRect.pivot = new Vector2(0.5f, 0f);
+            timerRect.anchoredPosition = new Vector2(0f, 18f);
+            timerRect.sizeDelta = new Vector2(0f, 34f);
+            deathTimerText.color = new Color(1f, 0.9f, 0.7f);
+
+            deathPanel.SetActive(false);
+        }
+
+        private void UpdateDeathPanel()
+        {
+            if (deathPanel == null || hero == null) return;
+
+            bool dead = !hero.IsAlive;
+            if (deathPanel.activeSelf != dead) deathPanel.SetActive(dead);
+            if (!dead) return;
+
+            float remaining = Mathf.Max(0f, hero.RespawnEndTime - Time.time);
+            deathTimerText.text = $"Возрождение через {remaining:0.0} с";
+            deathKillerText.text = KillerLabel(hero.LastKillerKind, hero.LastKillerWasNexus);
+        }
+
+        private static string KillerLabel(UnitKind kind, bool nexus)
+        {
+            return kind switch
+            {
+                UnitKind.Structure => nexus ? "Убийца: нексус противника" : "Убийца: башня противника",
+                UnitKind.Minion => "Убийца: миньон противника",
+                UnitKind.Hero => "Убийца: герой противника",
+                _ => "Причина смерти неизвестна"
+            };
         }
 
         private void UpdateBars()

@@ -36,7 +36,8 @@ namespace Moba.Combat
 
         public bool CanReach(Unit target)
         {
-            if (target == null || owner == null || !owner.IsAlive || !target.IsAlive) return false;
+            if (target == null || owner == null || !owner.IsAlive) return false;
+            if (!target.IsAlive || !target.CanBeDamaged) return false;
             if (target.Team == owner.Team || target.Team == Team.None) return false;
 
             return MathUtil.FlatDistance(owner.transform.position, target.transform.position) <= range;

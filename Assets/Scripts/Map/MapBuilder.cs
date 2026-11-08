@@ -32,7 +32,7 @@ namespace Moba.Map
             layout.Lanes = BuildLanes(map);
             BuildBase(map, layout, Team.Blue);
             BuildBase(map, layout, Team.Red);
-            BuildTowers(map, layout);
+            BuildTowers(layout);
 
             return layout;
         }
@@ -134,12 +134,6 @@ namespace Moba.Map
                 new Vector3(GameConfig.FountainRadius * 2f, 0.03f, GameConfig.FountainRadius * 2f),
                 TeamColors.Darken(teamColor, 0.35f), keepCollider: false);
 
-            SceneFactory.Primitive(
-                PrimitiveType.Cylinder, $"Nexus_{team}", map,
-                new Vector3(basePosition.x, 3f, basePosition.z),
-                new Vector3(GameConfig.NexusRadius * 2f, 3f, GameConfig.NexusRadius * 2f),
-                teamColor);
-
             var healZoneGo = new GameObject($"HealZone_{team}");
             healZoneGo.transform.SetParent(map, false);
             healZoneGo.transform.position = basePosition;
@@ -147,12 +141,14 @@ namespace Moba.Map
             healZone.Initialize(team, GameConfig.FountainRadius, GameConfig.FountainHealPerSecond);
         }
 
-        private static void BuildTowers(Transform map, MapLayout layout)
+        private static void BuildTowers(MapLayout layout)
         {
             // Доли длины линии от синей базы до красной.
-            // 0.30/0.44 для синих, 0.56/0.70 для красных — зеркально.
-            float[] blueFractions = { 0.30f, 0.44f };
-            float[] redFractions = { 0.56f, 0.70f };
+            // tier 0 — внешняя башня (ближе к центру), tier 1 — внутренняя (ближе к базе).
+            // Внешние отодвинуты от центра, внутренние — ещё дальше к базе,
+            // чтобы вражеские вышки не доставали друг друга.
+            float[] blueFractions = { 0.38f, 0.20f };
+            float[] redFractions = { 0.62f, 0.80f };
 
             for (int laneIndex = 0; laneIndex < layout.Lanes.Length; laneIndex++)
             {
@@ -161,13 +157,13 @@ namespace Moba.Map
 
                 for (int tier = 0; tier < 2; tier++)
                 {
-                    BuildTower(map, layout, Team.Blue, laneIndex, tier, path, length * blueFractions[tier]);
-                    BuildTower(map, layout, Team.Red, laneIndex, tier, path, length * redFractions[tier]);
+                    BuildTower(layout, Team.Blue, laneIndex, tier, path, length * blueFractions[tier]);
+                    BuildTower(layout, Team.Red, laneIndex, tier, path, length * redFractions[tier]);
                 }
             }
         }
 
-        private static void BuildTower(Transform map, MapLayout layout, Team team, int laneIndex, int tier, Vector3[] path, float distance)
+        private static void BuildTower(MapLayout layout, Team team, int laneIndex, int tier, Vector3[] path, float distance)
         {
             Vector3 position = MapPath.PointAt(path, distance);
             Vector3 direction = MapPath.DirectionAt(path, distance);
@@ -177,12 +173,6 @@ namespace Moba.Map
             if (Vector3.Dot(side, -position) < 0f) side = -side;
             position += side * 3.2f;
             position.y = 0f;
-
-            Color color = TeamColors.Darken(TeamColors.Of(team), 0.2f);
-            SceneFactory.Primitive(
-                PrimitiveType.Cylinder, $"Tower_{team}_{laneIndex}_{tier}", map,
-                new Vector3(position.x, 2.5f, position.z),
-                new Vector3(3f, 2.5f, 3f), color);
 
             layout.Towers.Add(new TowerSpot
             {

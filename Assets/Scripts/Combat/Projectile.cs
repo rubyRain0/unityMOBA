@@ -20,7 +20,7 @@ namespace Moba.Combat
         public static Projectile Spawn(Unit owner, Unit target, float damage, float speed, Color color)
         {
             var go = new GameObject("Projectile");
-            go.transform.position = owner.transform.position + Vector3.up * 1.2f;
+            go.transform.position = owner.transform.position + Vector3.up * SpawnHeight(owner.Kind);
 
             SceneFactory.Primitive(
                 PrimitiveType.Sphere, "Visual", go.transform,
@@ -45,7 +45,7 @@ namespace Moba.Combat
                 return;
             }
 
-            Vector3 aimPoint = target.transform.position + Vector3.up * 1f;
+            Vector3 aimPoint = target.transform.position + Vector3.up * AimHeight(target.Kind);
             transform.position = Vector3.MoveTowards(transform.position, aimPoint, speed * Time.deltaTime);
 
             if ((transform.position - aimPoint).sqrMagnitude <= 0.04f)
@@ -53,6 +53,28 @@ namespace Moba.Combat
                 target.TakeDamage(damage, owner);
                 Destroy(gameObject);
             }
+        }
+
+        private static float SpawnHeight(UnitKind kind)
+        {
+            return kind switch
+            {
+                UnitKind.Structure => 4f,
+                UnitKind.Minion => 0.8f,
+                UnitKind.Hero => 1.2f,
+                _ => 1f
+            };
+        }
+
+        private static float AimHeight(UnitKind kind)
+        {
+            return kind switch
+            {
+                UnitKind.Structure => 2.5f,
+                UnitKind.Minion => 0.7f,
+                UnitKind.Hero => 1.1f,
+                _ => 0.8f
+            };
         }
     }
 }
