@@ -34,6 +34,7 @@ namespace Moba.Control
 
         private void Update()
         {
+            if (MatchManager.Instance != null && !MatchManager.Instance.IsPlaying) return;
             if (hero == null) return;
             if (!hero.IsAlive)
             {

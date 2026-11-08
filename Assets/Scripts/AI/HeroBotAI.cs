@@ -49,6 +49,7 @@ namespace Moba.AI
         private void Update()
         {
             if (self == null || !self.IsAlive) return;
+            if (MatchManager.Instance != null && !MatchManager.Instance.IsPlaying) return;
 
             float healthRatio = self.Health / self.MaxHealth;
 

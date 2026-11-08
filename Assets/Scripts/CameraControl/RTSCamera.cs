@@ -77,18 +77,27 @@ namespace Moba.CameraControl
             return false;
         }
 
-        public bool TryPickEnemyUnit(Team myTeam, out Unit unit)
+        public bool TryGetUnitUnderCursor(out Unit unit)
         {
             unit = null;
 
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
             if (!Physics.Raycast(ray, out RaycastHit hit, 500f)) return false;
 
-            Unit candidate = hit.collider.GetComponentInParent<Unit>();
-            if (candidate == null || !candidate.CanBeDamaged) return false;
-            if (candidate.Team == myTeam || candidate.Team == Team.None) return false;
+            unit = hit.collider.GetComponentInParent<Unit>();
+            return unit != null && unit.IsAlive;
+        }
 
-            unit = candidate;
+        public bool TryPickEnemyUnit(Team myTeam, out Unit unit)
+        {
+            if (!TryGetUnitUnderCursor(out unit)) return false;
+
+            if (unit.Team == myTeam || unit.Team == Team.None || !unit.CanBeDamaged)
+            {
+                unit = null;
+                return false;
+            }
+
             return true;
         }
 

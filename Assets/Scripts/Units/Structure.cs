@@ -18,6 +18,7 @@ namespace Moba.Units
         public int Tier { get; private set; } = -1;
 
         public override bool CanBeDamaged => base.CanBeDamaged && IsObjectiveUnlocked();
+        public override bool IsPrimaryObjective => IsNexus;
 
         private void Awake()
         {

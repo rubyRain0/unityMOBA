@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Moba.Utils;
@@ -5,18 +6,21 @@ using Moba.Utils;
 namespace Moba.Core
 {
     /// <summary>
-    /// Реестр всех живых юнитов. Нужен ИИ, лечению у базы и поиску цели,
-    /// чтобы не сканировать сцену через FindObjects.
+    /// Реестр всех юнитов и глобальное событие смерти.
+    /// Нужен ИИ, лечению у базы, поиску цели и статистике матча.
     /// </summary>
     public static class UnitRegistry
     {
         private static readonly HashSet<Unit> Units = new();
+
+        public static event Action<Unit, Unit> UnitDied;
 
         public static IReadOnlyCollection<Unit> All => Units;
 
         public static void Clear()
         {
             Units.Clear();
+            UnitDied = null;
         }
 
         public static void Register(Unit unit)
@@ -27,6 +31,11 @@ namespace Moba.Core
         public static void Unregister(Unit unit)
         {
             if (unit != null) Units.Remove(unit);
+        }
+
+        public static void NotifyDied(Unit victim, Unit killer)
+        {
+            UnitDied?.Invoke(victim, killer);
         }
 
         /// <summary>

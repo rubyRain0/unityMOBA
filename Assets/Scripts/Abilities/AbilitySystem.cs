@@ -1,5 +1,6 @@
 using UnityEngine;
 using Moba.CameraControl;
+using Moba.Core;
 using Moba.Navigation;
 using Moba.Units;
 
@@ -69,6 +70,7 @@ namespace Moba.Abilities
             }
 
             if (!PlayerControlled || hero == null || !hero.IsAlive) return;
+            if (MatchManager.Instance != null && !MatchManager.Instance.IsPlaying) return;
 
             if (Input.GetKeyDown(KeyCode.Q)) CastAtCursor(0);
             if (Input.GetKeyDown(KeyCode.W)) CastAtCursor(1);

@@ -32,6 +32,13 @@ namespace Moba.Core
         /// <summary>Множитель урона только для героя игрока.</summary>
         public const float PlayerDamageMultiplier = 10f;
 
+        /// <summary>Множитель урона вражеских героев</summary>
+        public const float EnemyDamageMultiplier = 1f;
+
+        // Матч
+        public const float MatchCountdownSeconds = 3f;
+        public const float MatchDurationSeconds = 600f;
+
         // Способности
         public const float SkillshotDamage = 130f;
         public const float SkillshotSpeed = 26f;

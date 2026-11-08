@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Moba.Abilities;
 using Moba.Core;
@@ -24,9 +26,14 @@ namespace Moba.UI
         private AbilitySystem abilitySystem;
         private Image[] abilityImages;
         private Text[] abilityCooldownTexts;
+        private Text countdownText;
+        private Text matchInfoText;
+        private GameObject endPanel;
 
         public static Hud Create(Hero hero)
         {
+            EnsureEventSystem();
+
             var go = new GameObject("HUD");
 
             Canvas canvas = go.AddComponent<Canvas>();
@@ -73,7 +80,13 @@ namespace Moba.UI
             abilitySystem = hero != null ? hero.GetComponent<AbilitySystem>() : null;
             BuildDeathPanel();
             BuildAbilityBar();
+            BuildMatchInfo();
             UpdateBars();
+
+            if (MatchManager.Instance != null)
+            {
+                MatchManager.Instance.MatchEnded += ShowEndScreen;
+            }
         }
 
         private void Update()
@@ -81,6 +94,7 @@ namespace Moba.UI
             UpdateBars();
             UpdateDeathPanel();
             UpdateAbilityBar();
+            UpdateMatchInfo();
         }
 
         private void BuildDeathPanel()
@@ -201,6 +215,152 @@ namespace Moba.UI
                     color.r, color.g, color.b,
                     onCooldown ? 0.25f : 0.85f);
             }
+        }
+
+        private void BuildMatchInfo()
+        {
+            countdownText = CreateText(transform, "Countdown", string.Empty, 96, TextAnchor.MiddleCenter);
+            RectTransform countdownRect = countdownText.rectTransform;
+            countdownRect.anchorMin = new Vector2(0.5f, 0.5f);
+            countdownRect.anchorMax = new Vector2(0.5f, 0.5f);
+            countdownRect.pivot = new Vector2(0.5f, 0.5f);
+            countdownRect.anchoredPosition = new Vector2(0f, 120f);
+            countdownRect.sizeDelta = new Vector2(400f, 140f);
+            countdownText.fontStyle = FontStyle.Bold;
+            countdownText.color = new Color(1f, 0.95f, 0.7f);
+            countdownText.gameObject.SetActive(false);
+
+            matchInfoText = CreateText(transform, "MatchInfo", string.Empty, 26, TextAnchor.MiddleCenter);
+            RectTransform infoRect = matchInfoText.rectTransform;
+            infoRect.anchorMin = new Vector2(0.5f, 1f);
+            infoRect.anchorMax = new Vector2(0.5f, 1f);
+            infoRect.pivot = new Vector2(0.5f, 1f);
+            infoRect.anchoredPosition = new Vector2(0f, -16f);
+            infoRect.sizeDelta = new Vector2(760f, 40f);
+        }
+
+        private void UpdateMatchInfo()
+        {
+            MatchManager match = MatchManager.Instance;
+            if (match == null || countdownText == null) return;
+
+            bool countingDown = match.IsCountdown;
+            if (countdownText.gameObject.activeSelf != countingDown)
+            {
+                countdownText.gameObject.SetActive(countingDown);
+            }
+
+            if (countingDown)
+            {
+                countdownText.text = Mathf.CeilToInt(match.CountdownRemaining).ToString();
+            }
+
+            int minutes = Mathf.FloorToInt(match.ElapsedTime / 60f);
+            int seconds = Mathf.FloorToInt(match.ElapsedTime % 60f);
+            matchInfoText.text =
+                $"{minutes:00}:{seconds:00}     Синие {match.BlueKills} : {match.RedKills} Красные";
+        }
+
+        private void ShowEndScreen(MatchResult result)
+        {
+            if (endPanel != null) return;
+            if (deathPanel != null) deathPanel.SetActive(false);
+            if (countdownText != null) countdownText.gameObject.SetActive(false);
+
+            string title;
+            Color titleColor;
+
+            if (result.Winner == Team.Blue)
+            {
+                title = "Победа!";
+                titleColor = new Color(0.4f, 1f, 0.5f);
+            }
+            else if (result.Winner == Team.Red)
+            {
+                title = "Поражение";
+                titleColor = new Color(1f, 0.4f, 0.35f);
+            }
+            else
+            {
+                title = "Ничья";
+                titleColor = new Color(1f, 0.9f, 0.5f);
+            }
+
+            RectTransform panel = CreatePanel(
+                transform, "EndPanel",
+                new Vector2(0.5f, 0.5f), new Vector2(760f, 480f), Vector2.zero,
+                new Color(0.04f, 0.05f, 0.08f, 0.97f));
+            endPanel = panel.gameObject;
+
+            Text titleText = CreateText(panel, "Title", title, 52, TextAnchor.MiddleCenter);
+            RectTransform titleRect = titleText.rectTransform;
+            titleRect.anchorMin = new Vector2(0f, 1f);
+            titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.anchoredPosition = new Vector2(0f, -24f);
+            titleRect.sizeDelta = new Vector2(0f, 72f);
+            titleText.fontStyle = FontStyle.Bold;
+            titleText.color = titleColor;
+
+            int minutes = Mathf.FloorToInt(result.Duration / 60f);
+            int seconds = Mathf.FloorToInt(result.Duration % 60f);
+
+            string body =
+                $"Синие {result.BlueKills} : {result.RedKills} Красные\n" +
+                $"Разрушено башен: {result.BlueTowers} : {result.RedTowers}\n" +
+                $"Время матча: {minutes:00}:{seconds:00}\n\n" +
+                $"Вы: убийства {result.PlayerKills}, смерти {result.PlayerDeaths}\n" +
+                $"Урон по героям: {Mathf.RoundToInt(result.PlayerDamage)}";
+
+            Text bodyText = CreateText(panel, "Body", body, 26, TextAnchor.MiddleCenter);
+            RectTransform bodyRect = bodyText.rectTransform;
+            bodyRect.anchorMin = new Vector2(0f, 1f);
+            bodyRect.anchorMax = new Vector2(1f, 1f);
+            bodyRect.pivot = new Vector2(0.5f, 1f);
+            bodyRect.anchoredPosition = new Vector2(0f, -110f);
+            bodyRect.sizeDelta = new Vector2(-60f, 280f);
+
+            var buttonGo = new GameObject(
+                "RestartButton",
+                typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+
+            var buttonRect = (RectTransform)buttonGo.transform;
+            buttonRect.SetParent(panel, false);
+            buttonRect.anchorMin = new Vector2(0.5f, 0f);
+            buttonRect.anchorMax = new Vector2(0.5f, 0f);
+            buttonRect.pivot = new Vector2(0.5f, 0f);
+            buttonRect.anchoredPosition = new Vector2(0f, 28f);
+            buttonRect.sizeDelta = new Vector2(280f, 60f);
+
+            Image buttonImage = buttonGo.GetComponent<Image>();
+            buttonImage.color = new Color(0.2f, 0.5f, 0.9f, 1f);
+            buttonImage.raycastTarget = true;
+
+            Button restartButton = buttonGo.GetComponent<Button>();
+            restartButton.targetGraphic = buttonImage;
+            restartButton.onClick.AddListener(RestartMatch);
+
+            Text restartText = CreateText(buttonGo.transform, "Text", "Играть снова", 26, TextAnchor.MiddleCenter);
+            RectTransform restartRect = restartText.rectTransform;
+            restartRect.anchorMin = Vector2.zero;
+            restartRect.anchorMax = Vector2.one;
+            restartRect.offsetMin = Vector2.zero;
+            restartRect.offsetMax = Vector2.zero;
+        }
+
+        private void RestartMatch()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (FindFirstObjectByType<EventSystem>() != null) return;
+
+            var go = new GameObject("EventSystem");
+            go.AddComponent<EventSystem>();
+            go.AddComponent<StandaloneInputModule>();
         }
 
         private void UpdateBars()

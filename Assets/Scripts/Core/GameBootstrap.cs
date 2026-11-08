@@ -16,6 +16,7 @@ namespace Moba.Core
     {
         private void Start()
         {
+            Time.timeScale = 1f;
             UnitRegistry.Clear();
             EnsureLighting();
 
@@ -35,12 +36,18 @@ namespace Moba.Core
 
             cameraRig.Follow(player.transform);
 
+            var matchGo = new GameObject("MatchManager");
+            matchGo.transform.SetParent(transform, false);
+            var match = matchGo.AddComponent<MatchManager>();
+            match.Initialize(player);
+
             var wavesGo = new GameObject("Waves");
             wavesGo.transform.SetParent(transform, false);
             var waves = wavesGo.AddComponent<WaveManager>();
             waves.Initialize(layout);
 
             Hud.Create(player);
+            FocusHighlight.Create(player);
         }
 
         private static void EnsureLighting()

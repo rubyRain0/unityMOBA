@@ -58,7 +58,11 @@ namespace Moba.Units
             hero.Initialize(team, GameConfig.HeroMaxHealth, GameConfig.HeroMaxMana);
             hero.SetSpawnPoint(spawnPoint);
 
-            float damageMultiplier = isPlayer ? GameConfig.PlayerDamageMultiplier : 1f;
+            float damageMultiplier;
+            if (isPlayer) damageMultiplier = GameConfig.PlayerDamageMultiplier;
+            else if (team == Team.Red) damageMultiplier = GameConfig.EnemyDamageMultiplier;
+            else damageMultiplier = 1f;
+
             hero.SetDamageMultiplier(damageMultiplier);
 
             var attacker = go.AddComponent<Attacker>();
