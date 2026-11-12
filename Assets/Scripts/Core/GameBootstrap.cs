@@ -34,7 +34,7 @@ namespace Moba.Core
             HeroSpawner.Spawn(layout, Team.Red, 1, 1, false, cameraRig);
             HeroSpawner.Spawn(layout, Team.Red, 2, 2, false, cameraRig);
 
-            cameraRig.Follow(player.transform);
+            cameraRig.SetTarget(player.transform);
 
             var matchGo = new GameObject("MatchManager");
             matchGo.transform.SetParent(transform, false);

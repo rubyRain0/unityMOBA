@@ -4,17 +4,27 @@ using Moba.Core;
 namespace Moba.CameraControl
 {
     /// <summary>
-    /// Камера MOBA: плавно следует за героем, приближается колесом мыши,
+    /// Камера MOBA: свободно ездит по карте (край экрана, средняя кнопка мыши),
+    /// по F1 привязывается к герою, приближается колесом мыши,
     /// отдаёт точку под курсором и юнита под курсором для клик-управления.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class RTSCamera : MonoBehaviour
     {
+        private const float EdgeSize = 0.01f;
+        private const float EdgeScrollSpeed = 26f;
+        private const float DragSensitivity = 0.35f;
+        private const float ZoomMin = 0.65f;
+        private const float ZoomMax = 1.45f;
+
         public static RTSCamera Instance { get; private set; }
+
+        public bool FollowEnabled { get; private set; }
 
         private Camera cam;
         private Transform followTarget;
         private Vector3 offset;
+        private Vector3 focus;
         private float zoom = 1f;
 
         private void Awake()
@@ -31,35 +41,71 @@ namespace Moba.CameraControl
 
         private void LateUpdate()
         {
+            float dt = Time.unscaledDeltaTime;
+
             float scroll = Input.mouseScrollDelta.y;
             if (Mathf.Abs(scroll) > 0.01f)
             {
-                zoom = Mathf.Clamp(zoom - scroll * 0.08f, 0.65f, 1.45f);
+                zoom = Mathf.Clamp(zoom - scroll * 0.08f, ZoomMin, ZoomMax);
             }
 
-            if (followTarget == null) return;
+            if (Input.GetKeyDown(KeyCode.F1) && followTarget != null)
+            {
+                FollowEnabled = !FollowEnabled;
+            }
 
-            Vector3 desired = followTarget.position + offset * zoom;
-            float t = 1f - Mathf.Exp(-10f * Time.deltaTime);
-            transform.position = Vector3.Lerp(transform.position, desired, t);
+            if (FollowEnabled && followTarget != null) focus = followTarget.position;
+            else MoveFreely(dt);
 
-            Vector3 lookPoint = followTarget.position + Vector3.up * 1.2f;
-            transform.rotation = Quaternion.LookRotation(lookPoint - transform.position);
+            ApplyTransform();
         }
 
-        public void Follow(Transform target)
+        private void ApplyTransform()
+        {
+            transform.position = focus + offset * zoom;
+            transform.rotation = Quaternion.LookRotation(Vector3.up * 1.2f - offset * zoom);
+        }
+
+        private void MoveFreely(float dt)
+        {
+            if (Input.GetMouseButton(2))
+            {
+                Vector3 right = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
+                Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+                focus += (right * -Input.GetAxis("Mouse X") + forward * -Input.GetAxis("Mouse Y"))
+                         * (DragSensitivity * zoom);
+            }
+            else
+            {
+                focus += EdgeDirection() * (EdgeScrollSpeed * zoom * dt);
+            }
+
+            focus.x = Mathf.Clamp(focus.x, -GameConfig.MapHalfSize, GameConfig.MapHalfSize);
+            focus.z = Mathf.Clamp(focus.z, -GameConfig.MapHalfSize, GameConfig.MapHalfSize);
+            focus.y = 0f;
+        }
+
+        private static Vector3 EdgeDirection()
+        {
+            if (!Application.isFocused) return Vector3.zero;
+
+            Vector3 mouse = Input.mousePosition;
+            Vector3 dir = Vector3.zero;
+
+            if (mouse.x <= Screen.width * EdgeSize) dir.x -= 1f;
+            else if (mouse.x >= Screen.width * (1f - EdgeSize)) dir.x += 1f;
+
+            if (mouse.y <= Screen.height * EdgeSize) dir.z -= 1f;
+            else if (mouse.y >= Screen.height * (1f - EdgeSize)) dir.z += 1f;
+
+            return dir;
+        }
+
+        public void SetTarget(Transform target)
         {
             followTarget = target;
-            SnapToTarget();
-        }
-
-        private void SnapToTarget()
-        {
-            if (followTarget == null) return;
-
-            transform.position = followTarget.position + offset * zoom;
-            Vector3 lookPoint = followTarget.position + Vector3.up * 1.2f;
-            transform.rotation = Quaternion.LookRotation(lookPoint - transform.position);
+            if (target != null) focus = target.position;
+            ApplyTransform();
         }
 
         public bool TryGetGroundPoint(out Vector3 point)

@@ -3,13 +3,15 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Moba.Abilities;
+using Moba.Combat;
 using Moba.Core;
+using Moba.Navigation;
 using Moba.Units;
 
 namespace Moba.UI
 {
     /// <summary>
-    /// Минимальный HUD: здоровье и мана героя, подсказка по управлению.
+    /// Минимальный HUD: здоровье, мана и характеристики героя, подсказка по управлению.
     /// Собирается кодом, чтобы не зависеть от префабов и Canvas в сцене.
     /// </summary>
     public class Hud : MonoBehaviour
@@ -20,6 +22,9 @@ namespace Moba.UI
         private RectTransform manaFill;
         private Text hpText;
         private Text manaText;
+        private Text statsText;
+        private Attacker attacker;
+        private NavMover mover;
         private GameObject deathPanel;
         private Text deathKillerText;
         private Text deathTimerText;
@@ -65,19 +70,53 @@ namespace Moba.UI
             hpFill = CreateBar(panel, "HP", new Vector2(16f, -16f), new Vector2(408f, 32f), new Color(0.8f, 0.18f, 0.18f), out hpText);
             manaFill = CreateBar(panel, "Mana", new Vector2(16f, -56f), new Vector2(408f, 24f), new Color(0.2f, 0.45f, 1f), out manaText);
 
+            RectTransform statsPanel = CreatePanel(
+                transform, "StatsPanel",
+                new Vector2(0.5f, 0f), new Vector2(320f, 100f), Vector2.zero,
+                new Color(0.04f, 0.05f, 0.07f, 0.85f));
+            statsPanel.pivot = new Vector2(1f, 1f);
+            statsPanel.anchoredPosition = new Vector2(-244f, 248f);
+
+            Text statsTitle = CreateText(statsPanel, "Title", "Характеристики", 18, TextAnchor.UpperLeft);
+            RectTransform statsTitleRect = statsTitle.rectTransform;
+            statsTitleRect.anchorMin = new Vector2(0f, 1f);
+            statsTitleRect.anchorMax = new Vector2(0f, 1f);
+            statsTitleRect.pivot = new Vector2(0f, 1f);
+            statsTitleRect.anchoredPosition = new Vector2(12f, -10f);
+            statsTitleRect.sizeDelta = new Vector2(296f, 22f);
+            statsTitle.fontStyle = FontStyle.Bold;
+            statsTitle.color = new Color(0.75f, 0.78f, 0.85f);
+
+            statsText = CreateText(statsPanel, "Stats", string.Empty, 18, TextAnchor.UpperLeft);
+            RectTransform statsRect = statsText.rectTransform;
+            statsRect.anchorMin = new Vector2(0f, 1f);
+            statsRect.anchorMax = new Vector2(0f, 1f);
+            statsRect.pivot = new Vector2(0f, 1f);
+            statsRect.anchoredPosition = new Vector2(12f, -40f);
+            statsRect.sizeDelta = new Vector2(296f, 52f);
+            statsText.lineSpacing = 1.3f;
+
             Text hint = CreateText(
                 transform, "Hint",
-                "ПКМ — движение / атака      Q/W/E — способности      Колесо мыши — зум",
-                20, TextAnchor.UpperLeft);
+                "ПКМ — движение / атака\n" +
+                "Q / W / E — способности\n" +
+                "Колесо мыши — зум\n" +
+                "Средняя кнопка мыши — перемещение камеры\n" +
+                "Курсор у края экрана — движение камеры\n" +
+                "F1 — слежение за героем",
+                18, TextAnchor.UpperLeft);
             RectTransform hintRect = hint.rectTransform;
             hintRect.SetParent(transform, false);
             hintRect.anchorMin = new Vector2(0f, 1f);
             hintRect.anchorMax = new Vector2(0f, 1f);
             hintRect.pivot = new Vector2(0f, 1f);
             hintRect.anchoredPosition = new Vector2(24f, -24f);
-            hintRect.sizeDelta = new Vector2(900f, 40f);
+            hintRect.sizeDelta = new Vector2(460f, 160f);
+            hint.lineSpacing = 1.15f;
 
             abilitySystem = hero != null ? hero.GetComponent<AbilitySystem>() : null;
+            attacker = hero != null ? hero.GetComponent<Attacker>() : null;
+            mover = hero != null ? hero.GetComponent<NavMover>() : null;
             BuildDeathPanel();
             BuildAbilityBar();
             BuildMatchInfo();
@@ -372,6 +411,13 @@ namespace Moba.UI
 
             SetFill(manaFill, hero.MaxMana > 0f ? hero.Mana / hero.MaxMana : 0f);
             manaText.text = $"Мана  {Mathf.CeilToInt(hero.Mana)} / {Mathf.CeilToInt(hero.MaxMana)}";
+
+            if (statsText != null)
+            {
+                float damage = attacker != null ? attacker.Damage : 0f;
+                float speed = mover != null && mover.Agent != null ? mover.Agent.speed : 0f;
+                statsText.text = $"Урон  {damage:0}\nСкорость  {speed:0.#}";
+            }
         }
 
         private static void SetFill(RectTransform fill, float ratio)
